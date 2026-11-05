@@ -3,6 +3,13 @@ of flake mass
 ================
 Guillermo Bustos-Pérez $^{1,2,3}$, Shannon P. McPherron $^{1}$
 
+``` r
+library(tidyverse); library(caret); library(kableExtra)
+Digit_data2 <- read.csv("../Data/Data.csv")
+Prim_Flakes <- Digit_data2 %>% filter(Flake_type == "Primary")
+Sec_Flakes <- Digit_data2 %>% filter(Flake_type == "Secondary")
+```
+
  
 
 $^{(1)}$ Departament of Human Origins, Max Planck Institute for
@@ -325,6 +332,10 @@ distribution.
 
  
 
+``` r
+knitr::include_graphics("External-images/knapping_sequence.png")
+```
+
 <div class="figure">
 
 <img src="External-images/knapping_sequence.png" alt="Example of some of the mechanical flaking experiments. A to C) Frames from a slow motion video showing the detachment of a secondary flake. D) Preparation and placement of the core prior to the detachment of a secondary flake (note that the tip of the hammer touches the core in order to determine the PD of the flake and then is raised before striking off the flake). E) Example of a mechanically produced secondary flake.  In each of these examples the color comes from paint used to improve the scanning characteristics of the otherwise clear glass." width="740" />
@@ -372,6 +383,15 @@ On average, each core yielded between 4 and 5 flakes of each type.
 
  
 
+``` r
+Digit_data2 %>% 
+  group_by(Flake_type, coretype, factor(aob)) %>% 
+  summarise(
+    count = n()
+  ) %>% 
+  kable(col.names = c("Flake type", "Core size", "AOB", "n"))
+```
+
 | Flake type | Core size    | AOB |   n |
 |:-----------|:-------------|:----|----:|
 | Primary    | HEMISPHERE08 | 0   |  50 |
@@ -408,6 +428,10 @@ differs slightly from what we previously reported
 
  
 
+``` r
+knitr::include_graphics("External-images/Sample-of-flakes.png")
+```
+
 <div class="figure">
 
 <img src="External-images/Sample-of-flakes.png" alt="Example of flakes from both experimental collections. Top row: flakes from the Hemisphere dataset obtained during the first round of flaking. Bottom row: flakes capturing scars from previous removals during the second round of detachment." width="764" />
@@ -434,6 +458,36 @@ standard deviation of cube root of flake mass was 0.452 for this
 experimental collection (Table <a href="#tab:desc-stat-flakes">2</a>).
 
  
+
+``` r
+rbind(
+  (
+    Digit_data2 %>% 
+      group_by(Flake_type) %>% 
+      summarise(
+        count =n (),
+        min_mass = min(fweight),
+        first_q = quantile(fweight, 0.25),
+        meadian = quantile(fweight, 0.5),
+        mean_mass = mean(fweight),
+        fthird_q = quantile(fweight, 0.75),
+        max_mass = max(fweight))
+  ),
+  (
+    Digit_data2 %>% 
+      group_by(Flake_type) %>% 
+      summarise(
+        count = n(),
+        min_mass = min(mass_cube),
+        first_q = quantile(mass_cube, 0.25),
+        meadian = quantile(mass_cube, 0.5),
+        mean_mass = mean(mass_cube),
+        fthird_q = quantile(mass_cube, 0.75),
+        max_mass = max(mass_cube)) 
+  )) %>% 
+  kable(col.names = c("Flake type", "n", "Min", "1st Q", "Median",
+                      "Mean", "3rd Q", "Max"), digits = 3)
+```
 
 | Flake type |   n |   Min | 1st Q | Median |  Mean | 3rd Q |    Max |
 |:-----------|----:|------:|------:|-------:|------:|------:|-------:|
@@ -517,6 +571,10 @@ comparability with earlier experiments; Figure
 - Mass: measured on a digital scale with a precision of 0.01 g.
 
  
+
+``` r
+knitr::include_graphics("External-images/secondary-flake-measures.png")
+```
 
 <div class="figure">
 
@@ -748,6 +806,68 @@ groups.
 
  
 
+``` r
+ggpubr::ggarrange(
+  (
+    as.data.frame(MLR_Prim$pred) %>% 
+  ggplot(aes(obs, pred)) +
+  geom_point(fill = "darkgreen", shape = 21) +
+  coord_fixed() +
+  theme_light() +
+  labs(title = "Trained and predicting on primary flakes",
+       x = "Observed flake mass (cube root)",
+       y = "Predicted mass (cube root)") + 
+  scale_x_continuous(breaks = seq(0, 3, 0.2), limits = c(0.8,2.9)) +
+  scale_y_continuous(breaks = seq(0, 3, 0.2), limits = c(0.8,2.9)) +
+  geom_smooth(method='lm', se = FALSE) +
+  geom_abline(linetype = "dashed") +
+  
+  theme(
+    axis.text = element_text(size = 7, color = "black"),
+    axis.title = element_text(size = 8, color = "black", face = "bold"),
+    plot.title = element_text(size = 7, color = "black", face = "bold"))
+  ),
+  
+  (Sec_Flakes %>% ggplot(aes(mass_cube, pred_from_prim)) +
+     geom_point(fill = "#007BA7", shape = 21) +
+     coord_fixed() +
+     theme_light() +
+     labs(title = "Trained on primary flakes, predicting on secondary flakes",
+          x = "Observed flake mass (cube root)",
+          y = "Predicted mass (cube root)") + 
+     scale_x_continuous(breaks = seq(0, 3, 0.2), limits = c(0.8,2.9)) +
+     scale_y_continuous(breaks = seq(0, 3, 0.2), limits = c(0.8,2.9)) +
+     geom_smooth(method='lm', se = FALSE) +
+     geom_abline(linetype = "dashed") +
+
+     theme(
+       axis.text = element_text(size = 7, color = "black"),
+       axis.title = element_text(size = 8, color = "black", face = "bold"),
+       plot.title = element_text(size = 7, color = "black", face = "bold")
+     )
+  ),
+  
+  (
+    Sec_Flakes %>% ggplot(aes(mass_cube, pred_from_sec)) +
+      geom_point(fill = "#CD5C5C", shape = 23) +
+      coord_fixed() +
+      theme_light() +
+      labs(title = "Trained and predicting on secondary flakes",
+           x = "Observed flake mass (cube root)",
+           y = "Predicted mass (cube root)") + 
+      scale_x_continuous(breaks = seq(0, 3, 0.2), limits = c(0.8,2.9)) +
+      scale_y_continuous(breaks = seq(0, 3, 0.2), limits = c(0.8,2.9)) +
+      geom_smooth(method = "lm", se = FALSE) +
+      geom_abline(linetype = "dashed") +
+      theme(
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold"),
+        plot.title = element_text(size = 7, color = "black", face = "bold")
+      )
+  )
+)
+```
+
 <div class="figure">
 
 <img src="v02-Scars-PD-and-AOB_files/figure-gfm/reg-plots-1.png" alt="Regression plots when estimating flake mass from the either primary flakes or from secondary flakes."  />
@@ -822,6 +942,27 @@ secondary flakes 0.705. However, the accuracy metrics of predictions
 
  
 
+``` r
+tibble(
+  Model_to_data = c("Primary to primary", "Primary to secondary", "Secondary to secondary"),
+  r2 = c(round(MLR_Prim$results[[3]], 3),
+         round(summary(lm((Sec_Flakes$mass_cube ~ Sec_Flakes$pred_from_prim)))$r.squared, 3),
+         round(summary(lm((Sec_Flakes$mass_cube ~ Sec_Flakes$pred_from_sec)))$r.squared, 3)),
+  
+  MAE = c(round(MLR_Prim$results[[4]], 3), 
+          round(caret::MAE(Sec_Flakes$mass_cube, Sec_Flakes$pred_from_prim),3),
+          round(caret::MAE(Sec_Flakes$mass_cube, Sec_Flakes$pred_from_sec), 3)),
+  
+  RMSE = c(round(MLR_Prim$results[[2]], 3), 
+           round(caret::RMSE(Sec_Flakes$mass_cube, Sec_Flakes$pred_from_prim),3),
+           round(caret::RMSE(Sec_Flakes$mass_cube, Sec_Flakes$pred_from_sec), 3)),
+    MAPE = c(
+    Metrics::mape(MLR_Prim$pred$obs, MLR_Prim$pred$pred)*100,
+    Metrics::mape(Sec_Flakes$mass_cube, Sec_Flakes$pred_from_prim)*100,
+    Metrics::mape(Sec_Flakes$mass_cube, Sec_Flakes$pred_from_sec)*100
+  )) %>% kable(col.names = c("Trained on, to predict", "r2", "MAE", "RMSE", "MAPE"), digits = 3)
+```
+
 | Trained on, to predict |    r2 |   MAE |  RMSE |   MAPE |
 |:-----------------------|------:|------:|------:|-------:|
 | Primary to primary     | 0.831 | 0.175 | 0.214 | 11.329 |
@@ -867,6 +1008,25 @@ normally distributed (W = 0.99; *p* = 0.79).
 
  
 
+``` r
+Res_Allmodels %>% 
+  ggplot() +
+  geom_density(aes(Residuals, color = Model)) +
+  theme_light() +
+  scale_color_manual(values = c("darkgreen", "#007BA7", "#CD5C5C"),
+                     labels = c("Primary to primary", "Primary to secondary", "Secondary to secondary")) +
+  ylab("Density") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "solid") +
+  theme(
+    legend.position = "bottom",
+    axis.text = element_text(size = 7, color = "black"),
+    axis.title = element_text(size = 8, color = "black", face = "bold"),
+    legend.title = element_text(size = 8.5, color = "black"),
+    legend.text = element_text(size = 8, color = "black")
+  )
+```
+
 <div class="figure">
 
 <img src="v02-Scars-PD-and-AOB_files/figure-gfm/dens-plots-1.png" alt="Scaled density plots of residual distribution among the three models"  />
@@ -902,6 +1062,147 @@ a coefficient estimate of 0, which indicates no systematic bias along
 the range of predictions.
 
  
+
+``` r
+ggpubr::ggarrange(
+  
+  # First row title
+  ggplot() +
+    theme_void() +
+    labs(title = "Trained and predicting on primary flakes") +
+    theme(
+      plot.title = element_text(
+        hjust = 0.5, face = "bold", size = 8
+      ),
+      plot.margin = margin(0, 0, 0, 0)
+    ),
+  
+  # First row plots
+  ggpubr::ggarrange(
+    as.data.frame(MLR_Prim$pred) %>% 
+      mutate(residual = obs - pred) %>% 
+      ggplot(aes(pred, residual)) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      geom_point(fill = "darkgreen", shape = 21) +
+      theme_light() +
+      labs(
+        x = "Predicted mass (cube root)",
+        y = "Residuals"
+      ) +
+      scale_y_continuous(breaks = seq(-0.5, 0.5, 0.1), limits = c(-0.5, 0.52)) +
+      scale_x_continuous(breaks = seq(0, 2.6, 0.2), limits = c(0.9, 2.6)) +
+      theme(
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold")
+      ),
+    
+    Prim_Flakes %>% 
+      mutate(res = MLR_Prim$pred$obs - MLR_Prim$pred$pred) %>% 
+      ggplot(aes(platthick, res)) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      geom_point(fill = "darkgreen", shape = 21) +
+      theme_light() +
+      ylab("Residuals") +
+      scale_y_continuous(breaks = seq(-0.5, 0.5, 0.1), limits = c(-0.5, 0.52)) +
+      scale_x_continuous(breaks = seq(0, 6.6, 1), limits = c(0.4, 7)) +
+      xlab("Flake PD (mm)") +
+      theme(
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold")
+      ),
+    ncol = 2
+  ),
+  
+  # Second row title
+  ggplot() +
+    theme_void() +
+    labs(title = "Trained on primary flakes, predicting on secondary flakes") +
+    theme(
+      plot.title = element_text(
+        hjust = 0.5, face = "bold", size = 8
+      ),
+      plot.margin = margin(0, 0, 0, 0)
+    ),
+  
+  # Second row plots
+  ggpubr::ggarrange(
+    Sec_Flakes %>% 
+      ggplot(aes(pred_from_prim, Res_Prim)) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      geom_point(fill = "#007BA7", shape = 21) +
+      theme_light() +
+      ylab("Residuals") +
+      xlab("Predicted mass (cube root)") +
+      scale_y_continuous(breaks = seq(-0.5, 0.5, 0.1), limits = c(-0.5, 0.52)) +
+      scale_x_continuous(breaks = seq(0, 2.6, 0.2), limits = c(0.9, 2.6)) +
+      theme(
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold")
+      ),
+    
+    Sec_Flakes %>% 
+      ggplot(aes(platthick, Res_Prim)) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      geom_point(fill = "#007BA7", shape = 21) +
+      theme_light() +
+      ylab("Residuals") +
+      scale_y_continuous(breaks = seq(-0.5, 0.5, 0.1), limits = c(-0.5, 0.52)) +
+      scale_x_continuous(breaks = seq(0, 6.6, 1), limits = c(0.4, 7)) +
+      xlab("Flake PD (mm)") +
+      theme(
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold")
+      ),
+    ncol = 2
+  ),
+  
+  # Third row title
+  ggplot() +
+    theme_void() +
+    labs(title = "Trained and predicting on secondary flakes") +
+    theme(
+      plot.title = element_text(
+        hjust = 0.5, face = "bold", size = 8
+      ),
+      plot.margin = margin(0, 0, 0, 0)
+    ),
+  
+  # Third row plots
+  ggpubr::ggarrange(
+    Sec_Flakes %>% 
+      ggplot(aes(pred_from_sec, Res_Sec)) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      geom_point(fill = "#CD5C5C", shape = 23) +
+      theme_light() +
+      ylab("Residuals") +
+      scale_y_continuous(breaks = seq(-0.5, 0.5, 0.1), limits = c(-0.5, 0.52)) +
+      scale_x_continuous(breaks = seq(0, 2.6, 0.2), limits = c(0.9, 2.6)) +
+      xlab("Predicted mass (cube root)") +
+      theme(
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold")
+      ),
+    
+    Sec_Flakes %>% 
+      ggplot(aes(platthick, Res_Sec)) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      geom_point(fill = "#CD5C5C", shape = 23) +
+      theme_light() +
+      ylab("Residuals") +
+      scale_y_continuous(breaks = seq(-0.5, 0.5, 0.1), limits = c(-0.5, 0.52)) +
+      scale_x_continuous(breaks = seq(0, 6.6, 1), limits = c(0.4, 7)) +
+      xlab("Flake PD (mm)") +
+      theme(
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold")
+      ),
+    ncol = 2
+  ),
+  
+  ncol = 1,
+  heights = c(0.12, 1, 0.12, 1, 0.12, 1)
+)
+```
 
 <div class="figure">
 
@@ -1005,6 +1306,85 @@ experimental conditions.
 
  
 
+``` r
+ggpubr::ggarrange(
+  (
+    Digit_data2 %>% 
+      pivot_longer(
+        cols = c(length, width, thick),
+        values_to = "values",
+        names_to = "Metrick_measures"
+      ) %>% 
+      mutate(Metrick_measures = factor(Metrick_measures,
+                                       levels = c("length", "width", "thick"),
+                                       labels = c("Length (mm)", "Width (mm)", "Thickness (mm)"))) %>% 
+      filter(aob == 0) %>% 
+      
+      ggplot(aes(platthick, values, fill = Flake_type, shape = Flake_type)) +
+      geom_point() +
+      stat_smooth(aes(color = Flake_type), method = "lm", 
+                  se = FALSE, show.legend = FALSE) +
+      labs(title = "AOB 0º",
+           x = "Platform depth (mm)",
+           y = "Linear mesurement (mm)") + 
+      facet_wrap(~ Metrick_measures, scales = "free_y") +
+      theme_light() +
+      scale_shape_manual(values = c(21, 23)) +
+      scale_fill_manual(values = c("#007BA7", "#CD5C5C")) +
+      scale_color_manual(values = c("#007BA7", "#CD5C5C")) +
+      labs(fill = "Flake type", shape = "Flake type") +
+      theme(
+        title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold"),
+        plot.title = element_text(size = 7, color = "black", face = "bold"),
+        strip.text = element_text(color = "black", face = "bold", size = 8),
+        strip.background = element_rect(fill = "white", colour = "black", linewidth = 1)
+      )
+  ),
+  
+  (
+    Digit_data2 %>% 
+      pivot_longer(
+        cols = c(length, width, thick),
+        values_to = "values",
+        names_to = "Metrick_measures"
+      ) %>% 
+      mutate(Metrick_measures = factor(Metrick_measures,
+                                       levels = c("length", "width", "thick"),
+                                       labels = c("Length (mm)", "Width (mm)", "Thickness (mm)"))) %>% 
+      filter(aob == 20) %>% 
+      
+      ggplot(aes(platthick, values, fill = Flake_type, shape = Flake_type)) +
+      geom_point() +
+      stat_smooth(aes(color = Flake_type), method = "lm", 
+                  se = FALSE, show.legend = FALSE) +
+      labs(title = "AOB 20º",
+           x = "Platform depth (mm)",
+           y = "Linear mesurement (mm)") + 
+      facet_wrap(~ Metrick_measures, scales = "free_y") +
+      theme_light() +
+      scale_shape_manual(values = c(21, 23)) +
+      scale_fill_manual(values = c("#007BA7", "#CD5C5C")) +
+      scale_color_manual(values = c("#007BA7", "#CD5C5C")) +
+      labs(fill = "Flake type", shape = "Flake type") +
+      theme(
+        title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 7, color = "black"),
+        axis.title = element_text(size = 8, color = "black", face = "bold"),
+        plot.title = element_text(size = 7, color = "black", face = "bold"),
+        strip.text = element_text(color = "black", face = "bold", size = 8),
+        strip.background = element_rect(fill = "white", colour = "black", linewidth = 1)
+      )
+  ),
+  
+  common.legend = TRUE,
+  ncol = 1,
+  legend = "bottom"
+  
+) 
+```
+
 <div class="figure">
 
 <img src="v02-Scars-PD-and-AOB_files/figure-gfm/measures-flakes-1.png" alt="Linear measurements according to flake type and AOB"  />
@@ -1053,6 +1433,35 @@ across both flake types, with the influence of flake type emerging
 primarily under more oblique striking conditions.
 
  
+
+``` r
+Digit_data2 %>%
+  ggplot(aes(platthick, frac_angle, fill = Flake_type, shape = Flake_type)) +
+  geom_point() +
+  stat_smooth(aes(color = Flake_type), method = "lm", 
+              se = FALSE, show.legend = FALSE) +
+  labs(
+       x = "Platform Depth (mm)",
+       y = "Fracture angle (º)") + 
+  facet_wrap(~ factor(aob), scales = "free",
+             labeller = as_labeller(c("0" = "AOB 0º",
+                                     "20" = "AOB 20º"))) +
+  theme_light() +
+  scale_shape_manual(values = c(21, 23)) +
+  scale_fill_manual(values = c("#007BA7", "#CD5C5C")) +
+  scale_color_manual(values = c("#007BA7", "#CD5C5C")) +
+  labs(fill = "Flake type", shape = "Flake type") +
+  
+  theme(
+    legend.position = "bottom",
+    title = element_text(size = 10, color = "black"),
+    axis.text = element_text(size = 7, color = "black"),
+    axis.title = element_text(size = 8, color = "black", face = "bold"),
+    plot.title = element_text(size = 7, color = "black", face = "bold"),
+    strip.text = element_text(color = "black", face = "bold", size = 8),
+    strip.background = element_rect(fill = "white", colour = "black", linewidth = 1)
+  )
+```
 
 <div class="figure">
 
