@@ -2,7 +2,7 @@
 title: "What secondary flakes tells us about flake fracture and the prediction of flake mass"
 author: "Guillermo Bustos-Pérez $^{1,2,3}$, Shannon P. McPherron $^{1}$"
 output:
-bookdown::github_document2:
+  bookdown::github_document2:
     number_sections: false
     keep_md: true
 bibliography: "References.bib"
