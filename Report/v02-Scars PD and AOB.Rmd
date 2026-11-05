@@ -26,6 +26,8 @@ $^{(1)}$ Departament of Human Origins, Max Planck Institute for Evolutionary Ant
 $^{(2)}$ Institut Català de Paleoecologia Humana i Evolució Social (IPHES-CERCA), Zona Educacional 4, Campus Sescelades URV (Edifici W3), 43007 Tarragona, Spain.   
 $^{(3)}$ Universitat Rovira i Virgili, Departament d’Història i Història de l’Art, Avinguda de Catalunya 35, 43002 Tarragona, Spain.   
 
+<div align="justify">   
+
 \ 
 
 ## **Abstract**   
@@ -827,3 +829,5 @@ Author contributions are described according to CRediT taxonomy. GBP contributed
 \ 
 
 ## **6) References**  
+
+</div>

@@ -20,6 +20,8 @@ $^{(2)}$ Institut Català de Paleoecologia Humana i Evolució Social
 $^{(3)}$ Universitat Rovira i Virgili, Departament d’Història i Història
 de l’Art, Avinguda de Catalunya 35, 43002 Tarragona, Spain.
 
+<div align="justify">
+
  
 
 ## **Abstract**
@@ -1867,6 +1869,8 @@ providing overarching guidance throughout the study.
  
 
 ## **6) References**
+
+</div>
 
 <div id="refs" class="references csl-bib-body">
 
